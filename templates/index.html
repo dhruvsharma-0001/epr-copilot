@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EPR Compliance Copilot -- Prototype</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 760px; margin: 0 auto; padding: 32px 20px; background:#0f1410; color:#e8e6df; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color:#9a9a92; font-size:13px; margin-bottom: 20px;}
+  .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px; margin-left:8px; }
+  .badge.live { background:#1f3d2b; color:#7fd99a; }
+  .badge.mock { background:#3d341f; color:#e0b869; }
+  .warning { border-left:3px solid #b5654a; background:rgba(181,101,74,.12); padding:10px 14px; font-size:13px; margin-bottom:20px; }
+  textarea { width:100%; box-sizing:border-box; padding:10px; border-radius:6px; border:1px solid #333; background:#161a17; color:#e8e6df; font-size:14px; }
+  button { background:#3a5a45; color:#e8e6df; border:none; padding:8px 18px; border-radius:6px; cursor:pointer; margin-top:8px; font-size:13px; }
+  button:hover { background:#4a7057; }
+  #answer { white-space:pre-wrap; background:#161a17; border:1px solid #2a2f2b; border-radius:6px; padding:14px; margin-top:16px; font-size:14px; display:none; }
+  .citation { display:inline-block; font-size:11px; background:#20241f; padding:3px 8px; border-radius:4px; margin:3px 4px 0 0; }
+  .citation.needs_verify { background:#3d341f; color:#e0b869; }
+  .citation.reported { background:#1a2b20; color:#8fbf9a; }
+  .section { margin-top:32px; padding-top:20px; border-top:1px solid #2a2f2b; }
+  input[type=text] { padding:6px 10px; border-radius:5px; border:1px solid #333; background:#161a17; color:#e8e6df; }
+  #calcResult, #deadlineResult { margin-top:10px; font-size:13px; }
+  .loading { color:#9a9a92; font-size:13px; margin-top:10px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>EPR Compliance Copilot
+  {% if live_mode %}
+    <span class="badge live">LIVE -- Claude connected</span>
+  {% else %}
+    <span class="badge mock">MOCK MODE -- no API key set</span>
+  {% endif %}
+</h1>
+<div class="sub">Prototype · {{ kb_size }} chunks in knowledge base · not a substitute for a real compliance consultant</div>
+
+<div class="warning">
+  This is a learning prototype. The knowledge base is built from secondary reporting,
+  not verified primary legal text. Do not use this to make a real compliance decision.
+</div>
+
+<div>
+  <textarea id="question" rows="3" placeholder="e.g. What are the QR code labeling requirements for plastic packaging?"></textarea>
+  <br>
+  <button onclick="askQuestion()">Ask</button>
+  <div class="loading" id="loading">Thinking...</div>
+</div>
+
+<div id="answer"></div>
+
+<div class="section">
+  <h3>Deadline lookup</h3>
+  <button onclick="getDeadline()">Get annual return deadline</button>
+  <div id="deadlineResult"></div>
+</div>
+
+<div class="section">
+  <h3>Target lookup</h3>
+  <input type="text" id="fyInput" placeholder="e.g. 2026-27">
+  <button onclick="getTarget()">Look up target</button>
+  <div id="calcResult"></div>
+</div>
+
+<script>
+async function askQuestion() {
+  const q = document.getElementById('question').value.trim();
+  if (!q) return;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('answer').style.display = 'none';
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q})
+    });
+    const data = await res.json();
+    let html = data.answer.replace(/\n/g, '<br>');
+    html += '<br><br><b>Citations:</b><br>';
+    (data.citations || []).forEach(c => {
+      html += `<span class="citation ${c.confidence}">[${c.id}] ${c.title}</span>`;
+    });
+    html += `<br><br><i style="color:#9a9a92;font-size:12px;">${data.disclaimer}</i>`;
+    const el = document.getElementById('answer');
+    el.innerHTML = html;
+    el.style.display = 'block';
+  } catch (e) {
+    document.getElementById('answer').innerHTML = 'Error: ' + e;
+    document.getElementById('answer').style.display = 'block';
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+async function getDeadline() {
+  const res = await fetch('/api/deadline');
+  const data = await res.json();
+  document.getElementById('deadlineResult').innerHTML =
+    `<b>${data.typical_date}</b><br><span style="color:#9a9a92">${data.note}</span>`;
+}
+
+async function getTarget() {
+  const fy = document.getElementById('fyInput').value.trim();
+  if (!fy) return;
+  const res = await fetch('/api/target/' + encodeURIComponent(fy));
+  const data = await res.json();
+  const el = document.getElementById('calcResult');
+  if (data.found) {
+    el.innerHTML = `<b>${data.recycle_reuse_pct}%</b> recycle/reuse target<br><span style="color:#9a9a92">${data.source}</span>`;
+  } else {
+    el.innerHTML = `<span style="color:#e0b869">${data.message}</span>`;
+  }
+}
+</script>
+
+</body>
+</html>
