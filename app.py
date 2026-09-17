@@ -1,24 +1,20 @@
 """
-EPR Compliance Copilot -- prototype
+EPR Compliance Copilot - Server & API
 
 Run with:
-    python3 app.py
+    .venv/bin/python app.py
 
 Then open http://localhost:5000
-
-Set ANTHROPIC_API_KEY in your environment (or a .env file) to switch the
-assistant from mock mode (raw retrieved chunks) to live mode (Claude-
-generated, cited answers). See README.md.
 """
 
 import os
 from flask import Flask, request, jsonify, render_template
-
 from dotenv import load_dotenv
+
 load_dotenv()
 
-from rag.chain import ask
-from rag.calculator import get_target, get_annual_return_deadline
+from rag.chain import ask, get_llm_status
+from rag.calculator import get_target, get_annual_return_deadline, calculate_liability
 from rag.knowledge_base import KNOWLEDGE_BASE
 
 app = Flask(__name__)
@@ -26,17 +22,42 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    live_mode = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    return render_template("index.html", live_mode=live_mode, kb_size=len(KNOWLEDGE_BASE))
+    status = get_llm_status()
+    return render_template(
+        "index.html",
+        live_mode=status["is_live"],
+        provider_label=status["label"],
+        kb_size=len(KNOWLEDGE_BASE),
+    )
+
+
+@app.route("/api/status")
+def api_status():
+    return jsonify(get_llm_status())
 
 
 @app.route("/api/ask", methods=["POST"])
 def api_ask():
-    data = request.get_json(force=True)
-    question = (data or {}).get("question", "").strip()
+    data = request.get_json(force=True) or {}
+    question = data.get("question", "").strip()
     if not question:
         return jsonify({"error": "question is required"}), 400
     result = ask(question)
+    return jsonify(result)
+
+
+@app.route("/api/calculate", methods=["POST"])
+def api_calculate():
+    data = request.get_json(force=True) or {}
+    pibo_type = data.get("pibo_type", "Brand Owner")
+    fiscal_year = data.get("fiscal_year", "2026-27")
+    tonnages = data.get("tonnages", {})
+
+    result = calculate_liability(
+        pibo_type=pibo_type,
+        fiscal_year=fiscal_year,
+        tonnages=tonnages,
+    )
     return jsonify(result)
 
 
@@ -52,11 +73,9 @@ def api_deadline():
 
 @app.route("/api/kb")
 def api_kb():
-    """Expose the knowledge base itself so you can see exactly what the
-    assistant can and can't answer from -- transparency over the retrieval
-    layer is the whole point at prototype stage."""
+    """Expose the knowledge base so users can inspect exact citations and confidence."""
     return jsonify([
-        {k: v for k, v in chunk.items() if k != "text"} | {"text_preview": chunk["text"][:120] + "..."}
+        {k: v for k, v in chunk.items() if k != "text"} | {"text_preview": chunk["text"][:140] + "..."}
         for chunk in KNOWLEDGE_BASE
     ])
 

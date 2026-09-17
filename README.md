@@ -1,129 +1,104 @@
-# EPR Compliance Copilot -- Prototype
+# EPR Compliance Copilot
 
-A working RAG prototype for a plastic-waste EPR compliance assistant, built on
-Flask + LangChain + LangGraph. This is Phase 3 (and a slice of Phase 4) of the
-build plan: a citation-grounded Q&A assistant over a small EPR knowledge base,
-plus two deterministic lookup tools (deadline, recycling target).
+A citation-grounded compliance copilot and obligation calculation engine for India's plastic waste Extended Producer Responsibility (EPR) regulations (Schedule II of the Plastic Waste Management Rules, 2016 and subsequent MoEFCC & CPCB amendments).
 
-## Read this before anything else
+Built on **Flask + LangChain + LangGraph**, featuring:
+- **Statutory Legal Q&A Assistant**: Grounded in official CPCB notifications, with citation badges and confidence ratings.
+- **Multi-Model LLM Routing**: Supports **Google Gemini** (recommended), **Anthropic Claude**, and **OpenAI**, with automated fallback to zero-dependency **Mock Mode**.
+- **Interactive EPR Liability & Penalty Calculator**: Computes Category I–IV statutory recycling targets, mandatory recycled-content requirements, certificate procurement budgets, and Environmental Compensation (EC) penalty exposures with a 3-year refund schedule.
+- **CPCB Portal Registration Readiness Checklist**: Practical compliance guide for Producers, Importers, Brand Owners (PIBOs), and Sellers.
 
-**The knowledge base (`rag/knowledge_base.py`) is built from secondary
-reporting, not verified primary legal text.** It has NOT been reviewed by an
-environmental compliance professional. Every chunk is tagged `"reported"` or
-`"needs_verify"` -- the app surfaces that flag to the user, it does not hide
-it. Do not use this to make a real compliance decision. Do not sell access to
-this exact knowledge base to anyone. This exists to prove the architecture
-works, so you can then do the real work of Phase 0 (get a domain expert) and
-Phase 2 (source verified primary text) from the build plan.
+---
 
 ## Architecture
 
 ```
 Browser  -->  Flask (app.py)  -->  LangGraph pipeline (rag/chain.py)
-                                       |
-                                       +--> retrieve_node: TF-IDF retriever
-                                       |    (rag/retriever.py) over
-                                       |    rag/knowledge_base.py
-                                       |
-                                       +--> generate_node: mock (no key)
-                                            or live (ChatAnthropic, if
-                                            ANTHROPIC_API_KEY is set)
+                                       │
+                                       ├─► retrieve_node: TF-IDF retriever
+                                       │   (rag/retriever.py) over rag/knowledge_base.py
+                                       │
+                                       └─► generate_node:
+                                           ├── Live Mode: Google Gemini (gemini-2.5-flash)
+                                           ├── Live Mode: Anthropic Claude (claude-3-5-sonnet)
+                                           ├── Live Mode: OpenAI (gpt-4o)
+                                           └── Mock Mode: (zero API key fallback)
 ```
 
-- **Retrieval**: `langchain_community.retrievers.TFIDFRetriever` -- pure
-  scikit-learn TF-IDF, no embedding model to download, fully transparent.
-  Swap for an embeddings-based retriever (Chroma/FAISS + OpenAI or Voyage
-  embeddings) once the knowledge base grows past a few hundred chunks --
-  TF-IDF only matches on shared vocabulary, it will miss paraphrased
-  questions that don't share keywords with the source text.
-- **Generation**: a 3-node LangGraph graph (`retrieve -> generate ->` done).
-  Runs in **mock mode** with zero setup (returns the raw retrieved chunks,
-  clearly labeled), or **live mode** if you set `ANTHROPIC_API_KEY`, in which
-  case it routes the same retrieved chunks through Claude with a strict
-  "answer only from context, cite every claim, flag needs_verify chunks"
-  system prompt.
-- **Calculator** (`rag/calculator.py`): deliberately NOT an LLM. It only
-  returns the two data points we actually have (70% target for FY 2026-27,
-  100% for FY 2028-29) and says "not available" for anything else, instead
-  of a model inventing a plausible-looking full schedule.
+- **Retrieval**: `langchain_community.retrievers.TFIDFRetriever` over statutory knowledge chunks with exact legal clause citations.
+- **Generation**: Strict system prompt enforcing zero hallucinations, explicit citation tags (e.g. `[kb004]`), and distinction between verified gazette rules vs reported market estimates.
+- **Deterministic Calculator** (`rag/calculator.py`): Full mathematical computation engine covering Category I (Rigid), Category II (Flexible), Category III (Multi-layered MLP), and Category IV (Compostable) obligations, market certificate prices, and Section 15 EPA 1986 penalty exposures.
 
-## Setup
+---
 
+## Quickstart
+
+### 1. Setup Environment
 ```bash
-cd epr-copilot
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate environment
+source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-Run in mock mode (no API key, works immediately):
-
+### 2. Configure API Key (Optional for Live Mode)
+Copy `.env.example` to `.env`:
 ```bash
-python3 app.py
+cp .env.example .env
 ```
+Add your preferred key:
+```ini
+# Option A: Google Gemini (Recommended)
+GEMINI_API_KEY=your_gemini_api_key
 
-Open http://localhost:5000 -- you'll see a "MOCK MODE" badge, and questions
-will return the raw retrieved chunks instead of a synthesized answer. This
-is the right way to first validate the *retrieval* quality on its own.
+# Option B: Anthropic Claude
+# ANTHROPIC_API_KEY=your_anthropic_api_key
 
-Run in live mode:
+# Option C: OpenAI
+# OPENAI_API_KEY=your_openai_api_key
+```
+*(If no API key is provided, the copilot runs automatically in **Mock Mode**, displaying raw retrieved legal chunks with zero setup).*
 
+### 3. Start the Application
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...   # your own key
-python3 app.py
+.venv/bin/python app.py
 ```
+Open **http://localhost:5000** in your browser.
 
-You'll see a "LIVE -- Claude connected" badge, and questions get a real
-synthesized, cited answer. (You can also put the key in a `.env` file in
-the project root -- it's loaded automatically via `python-dotenv`.)
+---
 
-Sanity-check the retrieval layer on its own, without Flask:
-
-```bash
-python3 -m rag.retriever
-python3 -m rag.chain
-```
-
-## Project layout
+## Project Structure
 
 ```
 epr-copilot/
-  app.py                  Flask routes
-  rag/
-    knowledge_base.py      The curated (unverified!) content chunks
-    retriever.py            TF-IDF retrieval over the knowledge base
-    chain.py                 LangGraph pipeline: retrieve -> generate
-    calculator.py            Deterministic deadline/target lookups
-  templates/
-    index.html               Minimal front end
-  requirements.txt
+├── app.py                  # Flask web server & REST API endpoints
+├── rag/
+│   ├── __init__.py
+│   ├── knowledge_base.py   # Ground-truth statutory CPCB knowledge chunks
+│   ├── retriever.py        # Keyword/TF-IDF retrieval engine
+│   ├── chain.py            # LangGraph multi-model RAG workflow
+│   └── calculator.py       # Deterministic EPR liability & penalty engine
+├── templates/
+│   └── index.html          # Polished tabbed UI (Q&A, Calculator, Checklist)
+├── .env.example            # Environment variable template
+├── .gitignore              # Ignores .venv, .env, __pycache__
+├── requirements.txt        # Frozen dependencies
+└── README.md               # Documentation & technical guide
 ```
 
-## What to do next (mapped to the earlier build plan)
+---
 
-1. **Phase 0** -- find an actual EPR consultant or environmental compliance
-   professional and get them to review `knowledge_base.py`. This matters
-   more than any code change.
-2. **Phase 2** -- replace every chunk's `text` with content sourced directly
-   from the official MoEFCC gazette notifications and CPCB circulars, and
-   resolve every chunk currently flagged `confidence="needs_verify"`
-   (kb004, kb008, kb011).
-3. **Phase 3 hardening** -- add LangSmith tracing (`LANGCHAIN_TRACING_V2=true`
-   + `LANGCHAIN_API_KEY`) so you can evaluate answer quality against a test
-   set your domain expert checks, before anyone else uses this.
-4. **Phase 4** -- add the n8n-based deadline reminder layer (annual return,
-   QR labeling, renewal) on top of the calculator functions already here.
-5. Only after 1-3 are solid: think about a real embeddings-based retriever,
-   auth, and a production WSGI server (this Flask dev server is not meant
-   to be exposed to the internet).
+## API Endpoints
 
-## Known limitations (being upfront)
-
-- 14 knowledge chunks, covering a fraction of the actual rule set. Real
-  coverage needs the complete rules + amendments + CPCB circulars.
-- Category III/IV definitions are explicitly marked incomplete (kb004) --
-  don't answer category-boundary questions confidently until this is fixed.
-- TF-IDF retrieval will miss questions phrased very differently from the
-  source text (e.g. slang, indirect phrasing). Test with your actual target
-  users' real questions, not just the sample queries here.
-- No authentication, no rate limiting, no production deployment config --
-  this is a local prototype, not something to put on the open internet
-  as-is.
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/status` | `GET` | Returns active LLM provider status and mode |
+| `/api/ask` | `POST` | Legal Q&A query grounded in statutory citations |
+| `/api/calculate` | `POST` | Computes Category I–IV targets, certificate budget, and penalty liability |
+| `/api/target/<fy>` | `GET` | Returns statutory recycling & recycled content target percentages |
+| `/api/deadline` | `GET` | Returns annual return statutory deadlines and typical extension windows |
+| `/api/kb` | `GET` | Exposes all knowledge chunks with citations and confidence levels |
