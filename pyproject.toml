@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "epr-copilot"
+version = "1.0.0"
+description = "AI Research Assistant and Liability Calculator for India's Plastic Waste EPR Rules (CPCB/MoEFCC)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "EPR Copilot Team" }
+]
+dependencies = [
+    "flask>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "langchain>=0.3.0",
+    "langchain-core>=0.3.0",
+    "langgraph>=0.2.0",
+    "langchain-community>=0.3.0",
+    "scikit-learn>=1.4.0",
+    "groq>=0.37.0",
+    "langchain-groq>=1.1.0",
+    "langchain-openai>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-anthropic>=0.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+]
+deploy = [
+    "gunicorn>=22.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

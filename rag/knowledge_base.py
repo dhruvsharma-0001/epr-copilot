@@ -232,4 +232,85 @@ KNOWLEDGE_BASE = [
             "small-scale status. Operating without registration attracts immediate customs holds and portal blacklisting."
         ),
     },
+    {
+        "id": "kb017",
+        "title": "Single-Use Plastics (SUP) Ban & 120-Micron Carry Bag Threshold",
+        "citation": "PWM (Amendment) Rules, 2021 (G.S.R. 571(E)) & Notification dated Aug 12, 2021",
+        "confidence": "verified",
+        "text": (
+            "Effective July 1, 2022, India banned 19 identified Single-Use Plastic (SUP) items with low utility and "
+            "high littering potential, including: plastic ear buds, balloon sticks, candy/ice-cream sticks, thermocol "
+            "(polystyrene) for decoration, plates, cups, glasses, cutlery (forks, spoons, knives, straws, trays), "
+            "wrapping films around sweet boxes, invitation cards, cigarette packets, and plastic PVC banners less than "
+            "100 microns. Furthermore, virgin or recycled plastic carry bags must have a minimum thickness of 120 microns. "
+            "Non-woven plastic carry bags must not be less than 60 grams per square meter (GSM)."
+        ),
+    },
+    {
+        "id": "kb018",
+        "title": "Plastic Waste Processors (PWP) Protocols & Digital Credit Generation",
+        "citation": "Schedule II, Clause 11 (Plastic Waste Processors) & CPCB Circulars on PWP Registration",
+        "confidence": "verified",
+        "text": (
+            "Plastic Waste Processors (PWPs) — including recyclers, waste-to-energy operators, co-processors in cement kilns, "
+            "and plastic-to-oil facilities — must register independently on the CPCB portal. PWPs generate digital EPR "
+            "certificates proportional to the physical quantity of plastic packaging waste processed. These certificates "
+            "are traded or transferred to PIBOs to fulfill annual recycling obligations. Portal rules strictly prohibit "
+            "double-counting: certificates must reference actual electricity consumption, GST sales invoices, and weighbridge "
+            "records. Unregistered recyclers cannot issue statutory EPR credits."
+        ),
+    },
+    {
+        "id": "kb019",
+        "title": "Brand Owner MSME Exemptions & Small Entity Thresholds",
+        "citation": "Schedule II, Clause 5.2 (Exemptions) of PWM Rules 2016",
+        "confidence": "verified",
+        "text": (
+            "Under Schedule II, Micro and Small Enterprises (as defined under the MSMED Act, 2006: investment in plant & machinery "
+            "up to Rs 1 crore and turnover up to Rs 5 crore for Micro; investment up to Rs 10 crore and turnover up to Rs 50 crore for Small) "
+            "who are Brand Owners are exempt from mandatory recycling obligations and recycled content targets. However, Medium and "
+            "Large brand owners have zero exemption. Crucially, even exempt micro/small brand owners must not use banned SUP items or "
+            "carry bags thinner than 120 microns."
+        ),
+    },
+    {
+        "id": "kb020",
+        "title": "Central CPCB vs State SPCB / PCC Jurisdictional Boundaries",
+        "citation": "Schedule II, Clause 6 (Registration Process) & Rule 13 of PWM Rules",
+        "confidence": "verified",
+        "text": (
+            "Jurisdiction for EPR registration is determined by the geographic footprint of operations: (1) Any Producer, "
+            "Importer, or Brand Owner operating in more than two States or Union Territories must register with the Central "
+            "Pollution Control Board (CPCB) on the national portal. (2) Entities operating in only one or two States/UTs must "
+            "register with the respective State Pollution Control Board (SPCB) or Pollution Control Committee (PCC). (3) Once "
+            "registered with CPCB, separate state-level registrations are not required, establishing a single-window compliance mechanism."
+        ),
+    },
+    {
+        "id": "kb021",
+        "title": "End-of-Life Disposal Mandates for Non-Recyclable Category II & III Plastics",
+        "citation": "Schedule II, Clause 8 & IRC SP:98 Guidelines",
+        "confidence": "verified",
+        "text": (
+            "Plastic packaging waste that cannot be mechanically recycled — especially contaminated flexible plastics (Category II) "
+            "and multilayered packaging (Category III) — must be diverted to authorized end-of-life disposal channels: (1) Co-processing "
+            "in cement kilns as alternative fuel and raw material (AFR); (2) Waste-to-Energy (WtE) combustion plants complying with "
+            "emission standards; (3) Plastic-to-fuel (pyrolysis) plants; or (4) Polymer-modified bituminous road construction under "
+            "Indian Roads Congress guideline IRC SP:98. Disposal in landfills attracts maximum Environmental Compensation penalties."
+        ),
+    },
+    {
+        "id": "kb022",
+        "title": "Cross-Compliance Boundaries: Battery (BWMR) and E-Waste EPR Rules",
+        "citation": "Battery Waste Management Rules, 2022 & E-Waste (Management) Rules, 2022",
+        "confidence": "verified",
+        "text": (
+            "India enforces distinct, non-fungible EPR regimes for different waste streams. Packaging of electronic products or "
+            "batteries is governed under Plastic Waste Management Rules (Schedule II). However, the internal electronic device or "
+            "battery itself is governed under separate statutory notifications: (1) Battery Waste Management Rules, 2022 for all "
+            "portable, automotive, and industrial batteries; (2) E-Waste (Management) Rules, 2022 for electronic equipment. Compliance "
+            "credits from plastic EPR cannot offset battery or e-waste recycling deficits, and distinct portal filings are required."
+        ),
+    },
 ]
+

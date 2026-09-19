@@ -93,10 +93,22 @@ def get_annual_return_deadline() -> dict:
     return ANNUAL_RETURN_DEADLINE
 
 
+def _safe_tonnage(val: Any, max_mt: float = 1_000_000.0) -> float:
+    """Sanitizes user-provided tonnage, guarding against NaN, Inf, and negatives."""
+    try:
+        v = float(val)
+        # NaN is not equal to itself; check finite and positive
+        if not (0.0 <= v <= max_mt) or v != v:
+            return 0.0
+        return v
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def calculate_liability(
-    pibo_type: str,
-    fiscal_year: str,
-    tonnages: Dict[str, float],
+    pibo_type: str = "Brand Owner",
+    fiscal_year: str = "2026-27",
+    tonnages: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """
     Computes statutory obligations, certificate costs, and penalty liabilities.
@@ -106,6 +118,7 @@ def calculate_liability(
         fiscal_year: Target fiscal year, e.g. "2026-27"
         tonnages: {"cat_1": float, "cat_2": float, "cat_3": float, "cat_4": float} in Metric Tonnes
     """
+    tonnages = tonnages or {}
     fy = fiscal_year if fiscal_year in RECYCLING_TARGETS else "2026-27"
     recycle_rates = RECYCLING_TARGETS[fy]
     recycled_content_rates = RECYCLED_CONTENT_TARGETS.get(fy, {})
@@ -118,7 +131,7 @@ def calculate_liability(
     max_cert_cost_inr = 0.0
 
     for cat_key, meta in CATEGORY_METADATA.items():
-        qty_mt = float(tonnages.get(cat_key, 0.0) or 0.0)
+        qty_mt = _safe_tonnage(tonnages.get(cat_key, 0.0))
         total_introduced_mt += qty_mt
 
         recycle_pct = recycle_rates.get(cat_key, 0)
